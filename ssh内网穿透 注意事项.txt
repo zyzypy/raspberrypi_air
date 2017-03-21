@@ -1,0 +1,39 @@
+# 内网穿透 访问公网：81 即可转发到树莓派的80端口。教程http://hi.ktsee.com/83.html 。注意客户机ssh进程休眠会导致外面的请求访问不到。
+# -N ssh仅连接不发送任何消息 -f后台运行 -R（重要）绑定端口  -o接参数  * 代表公网地址
+ssh -NfR *:81:127.0.0.1:80 root@59.110.45.168 -p 22000 -o TCPKeepAlive=yes  # 光配置TCPKeepAlive这样还是会断连接
+# 一段时间不访问后，可以从公网服务器进程中(ps -aux|grep sshd)看到进程处于s休眠状态，这个时候访问公网端口会一直加载中。所以需要客户端向服务器端
+发送请求来保持激活ssh -R *:81:127.0.0.1:80 root@59.110.45.168 -p 22000  "vmstat 30"。
+
+
+ssh -NfR *:81:127.0.0.1:80 root@59.110.45.168 -p 22000
+
+
+# 此方法可行!已配置ClientAliveInterval 60  ServerAliveInterval 30。
+1 配置服务器
+打开
+/etc/ssh/sshd_config
+找到
+ClientAliveInterval
+参数，如果没有就自己加一行
+数值是秒，比如你设置为540，就是9分钟.
+ClientAliveInterval 540
+
+对于
+ClientAliveCountMax
+指如果发现客户端没有相应，则判断一次超时，这个参数设置允许超时的次数。比如10
+ClientAliveInterval 540
+ClientAliveCountMax 10;
+
+则代表允许超时 5400秒 = 90分钟
+
+
+2 配置客户端
+编辑
+/etc/ssh/ssh_config
+
+如果是Windows用户，你自己在安装目录找吧
+
+然后找到里面的
+ServerAliveInterval
+参数，如果没有你同样自己加一个就好了
+参数意义相同，都是秒数，比如9分钟

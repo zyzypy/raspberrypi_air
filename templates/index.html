@@ -1,0 +1,977 @@
+<html lang="zh" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
+<head>
+    <!-- 元信息 -->
+    <title>PM2.5监测</title>
+    <link rel="shortcut icon" href="../static/images/favicon.png">
+    <meta name="author" contect="YangZheng, 969501808@qq.com"/>
+    <meta name="keywords" content="PM2.5 PM1.0 PM10 甲醛 树莓派 攀藤PMS5003s 奥松DHT22 内网穿透">
+    <meta name="description" content="设计 UI UE ui 素材 dribbble中文 色彩测试">
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"><!--告诉IE使用最新的引擎渲染网页-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+
+    <!-- material css & 本模板css -->
+    <link rel="stylesheet" href="{{ url_for('static', filename = 'css/material.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename = 'css/styles.css') }}">
+
+    <!-- jquery & material js & 本模板js & highcharts -->
+    <script src="{{ url_for('static', filename = 'js/jquery-2.2.3.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'js/material.min.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'js/highcharts.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'js/highcharts-more.js') }}"></script>
+    <!-- material-icons -->
+    <link href="{{ url_for('static', filename = 'css/material-icons.css') }}" rel="stylesheet"><!--依赖 static/fonts/iconfont 下的文件，此css为引用iconfont的配置-->
+</head>
+
+
+<body class="mdl-demo mdl-color--grey-100 mdl-color-text--grey-700 mdl-base">
+<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+    <!-- header -->
+    <header class="mdl-layout__header mdl-layout__header--scroll mdl-color--primary">
+        <div class="mdl-layout--large-screen-only mdl-layout__header-row"></div>
+        <div class="mdl-layout--large-screen-only mdl-layout__header-row">
+            <h3>PM2.5 &amp; 温湿度 &amp; 甲醛</h3>
+        </div>
+        <div class="mdl-layout--large-screen-only mdl-layout__header-row"></div>
+        <div class="mdl-layout__tab-bar mdl-js-ripple-effect mdl-color--primary-dark">
+            <a href="#overview" class="mdl-layout__tab is-active">监控</a>
+            <!--<a href="#features" class="mdl-layout__tab">教程</a>-->
+            <!-- 大圆按钮 -->
+            <button id="add" class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored mdl-shadow--4dp mdl-color--accent">
+                <i class="material-icons" role="presentation">add</i>
+            </button>
+        </div>
+    </header>
+
+    <!-- body -->
+    <main class="mdl-layout__content">
+        <div class="mdl-layout__tab-panel is-active" id="overview">
+
+            <section class="mdl-grid section--center mdl-grid--no-spacing mdl-shadow--2dp">
+                <!-- 即时温度 -->
+                <div id="temperature_now" class="mdl-cell--6-col mdl-cell--12-col-phone"></div>
+                <script>
+                $(function () {
+                    $(document).ready(function () {
+                        Highcharts.setOptions({
+                            global: {
+                                useUTC: false
+                            }
+                        });
+
+                        Highcharts.chart('temperature_now', {
+                            chart: {
+                                type: 'spline',     // highcharts动态表格详见官网
+                                animation: Highcharts.svg, // don't animate in old IE
+                                marginRight: 10,
+                                events: {
+                                    load: function () {
+                                        // set up the updating of the chart each second
+                                        var series = this.series[0];
+                                        /** 定时请求 接受数据 highchar自己的方法chart和series方法会更新数据到表格**/
+                                        setInterval(function () {
+                                            var x = (new Date()).getTime(); // current time
+                                            var y = 0.0
+                                            //$get(url，function(data)) data可以是json或xml，语言不同 无法直接拿后台py传过来的字典
+                                            //$each(datalist, function(i, item)) 遍历老报错
+                                            $.get("{{ url_for('temperature_now') }}",function(data){
+                                                if(data!='-1'){
+                                                    //console.log(data)
+                                                    y = parseFloat(data);
+                                                    //console.log(x,y);
+                                                    series.addPoint([x, y], true, true);
+                                                    //console.log(series);
+                                                }else{
+                                                    //console.log("数据校验失败，等待下次请求");
+                                                }
+                                            });
+                                        }, 5000);       // 定时间隔
+                                    }
+                                }
+                            },
+                            title: {
+                                text: '温度 °C'
+                            },
+                            xAxis: {
+                                type: 'datetime',
+                                tickPixelInterval: 150
+                            },
+                            yAxis: {
+                                title: {
+                                    text: 'Value'
+                                },
+                                plotLines: [{
+                                    value: 0,
+                                    width: 1,
+                                    color: '#808080'
+                                }]
+                            },
+                            tooltip: {
+                                formatter: function () {
+                                    return '<b>' + this.series.name + '</b><br/>' +
+                                        Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x) + '<br/>' +
+                                        Highcharts.numberFormat(this.y, 1);
+                                }
+                            },
+                            legend: {
+                                enabled: false
+                            },
+                            exporting: {
+                                enabled: false
+                            },
+                            series:[{
+                                name: '温度 C',      // 点上的名字
+                                // data必须给初始值，js数组 map都行
+                                data:[{x:0,y:20.0},{x:1,y:30.0}]
+
+                                }
+                            ]
+                        });
+                    });
+                });
+            </script>
+
+                <!-- 即时湿度 -->
+                <div id="humidity_now" class="mdl-cell--6-col mdl-cell--12-col-phone">
+                </div>
+                <script>
+                $(function () {
+                    $(document).ready(function () {
+
+                        Highcharts.chart('humidity_now', {     // 绑定div的id
+                            chart: {
+                                type: 'spline',     // highcharts动态表格详见官网
+                                animation: Highcharts.svg, // don't animate in old IE
+                                marginRight: 10,
+                                events: {
+                                    load: function () {
+                                        // set up the updating of the chart each second
+                                        var series = this.series[0];
+                                        /** 定时请求 接受数据 highchar自己的方法chart和series方法会更新数据到表格**/
+                                        setInterval(function () {
+                                            var x = (new Date()).getTime(); // current time
+                                            var y = 0.0
+                                            //$get(url，function(data)) data可以是json或xml，语言不同 无法直接拿后台py传过来的字典
+                                            //$each(datalist, function(i, item)) 遍历老报错
+                                            $.get("{{ url_for('humidity_now') }}",function(data){
+                                                if(data!='-1'){
+                                                    //console.log(data)
+                                                    y = parseFloat(data);
+                                                    //console.log(x,y);
+                                                    series.addPoint([x, y], true, true);
+                                                    //console.log(series);
+                                                }else{
+                                                    //console.log("数据校验失败，等待下次请求");
+                                                }
+                                            });
+                                        }, 5000);       // 定时间隔
+                                    }
+                                }
+                            },
+                            title: {
+                                text: '湿度 %'
+                            },
+                            xAxis: {
+                                type: 'datetime',
+                                tickPixelInterval: 150
+                            },
+                            yAxis: {
+                                title: {
+                                    text: 'Value'
+                                },
+                                plotLines: [{
+                                    value: 0,
+                                    width: 1,
+                                    color: '#808080'
+                                }]
+                            },
+                            tooltip: {
+                                formatter: function () {
+                                    return '<b>' + this.series.name + '</b><br/>' +
+                                        Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x) + '<br/>' +
+                                        Highcharts.numberFormat(this.y, 1);
+                                }
+                            },
+                            legend: {
+                                enabled: false
+                            },
+                            exporting: {
+                                enabled: false
+                            },
+                            series:[{
+                                name: '湿度 %',      // 点上的名字
+                                // data必须给初始值，js数组 map都行
+                                data:[{x:0,y:20.0},{x:1,y:40.0}]
+                                }
+                            ]
+                        });
+                    });
+                });
+            </script>
+            </section>
+
+
+            <!--PM1.0 PM2.5 PM10质量& 甲醛-->
+            <section class="mdl-grid section--center mdl-grid--no-spacing mdl-shadow--2dp">
+                <div id="pm1dot0" class="mdl-cell--3-col mdl-cell--12-col-phone"></div>
+                <div id="pm2dot5" class="mdl-cell--3-col mdl-cell--12-col-phone"></div>
+                <div id="pm10dot0" class="mdl-cell--3-col mdl-cell--12-col-phone"></div>
+                <div id="formaldehyde" class="mdl-cell--3-col mdl-cell--12-col-phone"></div>
+
+                <script>
+                $(function () {
+                    Highcharts.chart('pm1dot0', {
+                        chart: {
+                            type: 'gauge',
+                            plotBackgroundColor: null,
+                            plotBackgroundImage: null,
+                            plotBorderWidth: 0,
+                            plotShadow: false
+                        },
+
+                        title: {
+                            text: 'PM1.0'
+                        },
+
+                        pane: {
+                            startAngle: -150,   //弧形条起止角度
+                            endAngle: 150,
+                            background: [{
+                                backgroundColor: {
+                                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                                    stops: [
+                                        [0, '#FFF'],
+                                        [1, '#333']
+                                    ]
+                                },
+                                borderWidth: 0,
+                                outerRadius: '109%'
+                            }, {
+                                backgroundColor: {
+                                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                                    stops: [
+                                        [0, '#333'],
+                                        [1, '#FFF']
+                                    ]
+                                },
+                                borderWidth: 1,
+                                outerRadius: '107%'
+                            }, {
+                                // default background
+                            }, {
+                                backgroundColor: '#DDD',
+                                borderWidth: 0,
+                                outerRadius: '105%',
+                                innerRadius: '103%'
+                            }]
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            min: 0,
+                            max: 200,
+
+                            minorTickInterval: 'auto',
+                            minorTickWidth: 1,
+                            minorTickLength: 10,
+                            minorTickPosition: 'inside',
+                            minorTickColor: '#666',
+
+                            tickPixelInterval: 30,
+                            tickWidth: 2,
+                            tickPosition: 'inside',
+                            tickLength: 10,
+                            tickColor: '#666',
+                            labels: {
+                                step: 2,
+                                rotation: 'auto'
+                            },
+                            title: {
+                                text: 'μg/m³'
+                            },
+                            plotBands: [{
+                                from: 0,
+                                to: 50,
+                                color: '#55BF3B' // green
+                            }, {
+                                from: 50,
+                                to: 120,
+                                color: '#DDDF0D' // yellow
+                            }, {
+                                from: 120,
+                                to: 200,
+                                color: '#DF5353' // red
+                            }]
+                        },
+
+                        series: [{
+                            name: 'PM1.0',
+                            data: [0.010],
+                            tooltip: {
+                                valueSuffix: 'μg/m³'
+                            }
+                        }]
+
+                    },
+                    // Add some life
+                    function (chart) {
+                        if (!chart.renderer.forExport) {
+                            setInterval(function () {
+                                var y = 0.000
+                                $.get("{{ url_for('pms5003s', name='pm1dot0') }}",function(data) {
+                                    var point = chart.series[0].points[0];
+                                    if (data != '-1') {
+                                        //console.log(data)
+                                        y = parseFloat(data);
+                                        console.log("pm1dot0",y);
+                                        point.update(y);
+                                        //console.log(series);
+                                    } else {
+                                        //console.log("数据校验失败，等待下次请求");
+                                    }
+                                })
+                            }, 2310);
+                        }
+                    });
+                });
+
+                $(function () {
+                    Highcharts.chart('pm2dot5', {
+
+                        chart: {
+                            type: 'gauge',
+                            plotBackgroundColor: null,
+                            plotBackgroundImage: null,
+                            plotBorderWidth: 0,
+                            plotShadow: false
+                        },
+
+                        title: {
+                            text: 'PM2.5'
+                        },
+
+                        pane: {
+                            startAngle: -150,   //弧形条起止角度
+                            endAngle: 150,
+                            background: [{
+                                backgroundColor: {
+                                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                                    stops: [
+                                        [0, '#FFF'],
+                                        [1, '#333']
+                                    ]
+                                },
+                                borderWidth: 0,
+                                outerRadius: '109%'
+                            }, {
+                                backgroundColor: {
+                                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                                    stops: [
+                                        [0, '#333'],
+                                        [1, '#FFF']
+                                    ]
+                                },
+                                borderWidth: 1,
+                                outerRadius: '107%'
+                            }, {
+                                // default background
+                            }, {
+                                backgroundColor: '#DDD',
+                                borderWidth: 0,
+                                outerRadius: '105%',
+                                innerRadius: '103%'
+                            }]
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            min: 0,     // 起止值
+                            max: 500,
+
+                            minorTickInterval: 'auto',
+                            minorTickWidth: 1,
+                            minorTickLength: 10,
+                            minorTickPosition: 'inside',
+                            minorTickColor: '#666',
+
+                            tickPixelInterval: 30,
+                            tickWidth: 2,
+                            tickPosition: 'inside',
+                            tickLength: 10,
+                            tickColor: '#666',
+                            labels: {
+                                step: 2,
+                                rotation: 'auto'
+                            },
+                            title: {
+                                text: 'μg/m³'
+                            },
+                            plotBands: [{
+                                from: 0,
+                                to: 50,
+                                color: '#55BF3B' // green
+                            }, {
+                                from: 50,
+                                to: 100,
+                                color: '#DDDF0D' // yellow
+                            }, {
+                                from: 100,
+                                to: 150,
+                                color: '#F6E200' // 橙
+                            },{
+                                from: 150,
+                                to: 200,
+                                color: '#DF2D00' // 红
+                            },{
+                                from: 200,
+                                to: 300,
+                                color: '#B414BB' // 紫
+                            },{
+                                from: 300,
+                                to: 500,
+                                color: '#6F0474' // 深紫
+                            }]
+                        },
+
+                        series: [{
+                            name: 'PM2.5',
+                            data: [50],
+                            tooltip: {
+                                valueSuffix: 'μg/m³'
+                            }
+                        }]
+
+                    },
+                    // Add some life
+                    function (chart) {
+                        if (!chart.renderer.forExport) {
+                            setInterval(function () {
+                                var y = 0.000
+                                $.get("{{ url_for('pms5003s', name='pm2dot5') }}",function(data) {
+                                    var point = chart.series[0].points[0];
+                                    if (data != '-1') {
+                                        //console.log(data)
+                                        y = parseFloat(data);
+                                        console.log("pm2dot5",y);
+                                        point.update(y);
+                                        //console.log(series);
+                                    } else {
+                                        //console.log("数据校验失败，等待下次请求");
+                                    }
+                                })
+                            }, 3001);
+                        }
+                    });
+                });
+
+                $(function () {
+                    Highcharts.chart('pm10dot0', {
+
+                        chart: {
+                            type: 'gauge',
+                            plotBackgroundColor: null,
+                            plotBackgroundImage: null,
+                            plotBorderWidth: 0,
+                            plotShadow: false
+                        },
+
+                        title: {
+                            text: 'PM10'
+                        },
+
+                        pane: {
+                            startAngle: -150,   //弧形条起止角度
+                            endAngle: 150,
+                            background: [{
+                                backgroundColor: {
+                                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                                    stops: [
+                                        [0, '#FFF'],
+                                        [1, '#333']
+                                    ]
+                                },
+                                borderWidth: 0,
+                                outerRadius: '109%'
+                            }, {
+                                backgroundColor: {
+                                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                                    stops: [
+                                        [0, '#333'],
+                                        [1, '#FFF']
+                                    ]
+                                },
+                                borderWidth: 1,
+                                outerRadius: '107%'
+                            }, {
+                                // default background
+                            }, {
+                                backgroundColor: '#DDD',
+                                borderWidth: 0,
+                                outerRadius: '105%',
+                                innerRadius: '103%'
+                            }]
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            min: 0,
+                            max: 1000,
+
+                            minorTickInterval: 'auto',
+                            minorTickWidth: 1,
+                            minorTickLength: 10,
+                            minorTickPosition: 'inside',
+                            minorTickColor: '#666',
+
+                            tickPixelInterval: 30,
+                            tickWidth: 2,
+                            tickPosition: 'inside',
+                            tickLength: 10,
+                            tickColor: '#666',
+                            labels: {
+                                step: 2,
+                                rotation: 'auto'
+                            },
+                            title: {
+                                text: 'μg/m³'
+                            },
+                            plotBands: [{
+                                from: 0,
+                                to: 400,
+                                color: '#55BF3B' // green
+                            }, {
+                                from: 400,
+                                to: 700,
+                                color: '#DDDF0D' // yellow
+                            }, {
+                                from: 700,
+                                to: 1000,
+                                color: '#DF5353' // red
+                            }]
+                        },
+
+                        series: [{
+                            name: 'PM10',
+                            data: [200],
+                            tooltip: {
+                                valueSuffix: 'μg/m³'
+                            }
+                        }]
+
+                    },
+                    // Add some life
+                    function (chart) {
+                        if (!chart.renderer.forExport) {
+                            setInterval(function () {
+                                var y = 0.000
+                                $.get("{{ url_for('pms5003s', name='pm10dot0') }}",function(data) {
+                                    var point = chart.series[0].points[0];
+                                    if (data != '-1') {
+                                        //console.log(data)
+                                        y = parseFloat(data);
+                                        console.log("pm10dot0",y);
+                                        point.update(y);
+                                        //console.log(series);
+                                    } else {
+                                        //console.log("数据校验失败，等待下次请求");
+                                    }
+                                })
+                            }, 4077);
+                        }
+                    });
+                });
+
+                $(function () {
+                    Highcharts.chart('formaldehyde', {
+
+                        chart: {
+                            type: 'gauge',
+                            plotBackgroundColor: null,
+                            plotBackgroundImage: null,
+                            plotBorderWidth: 0,
+                            plotShadow: false
+                        },
+
+                        title: {
+                            text: '甲醛'
+                        },
+
+                        pane: {
+                            startAngle: -150,   //弧形条起止角度
+                            endAngle: 150,
+                            background: [{
+                                backgroundColor: {
+                                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                                    stops: [
+                                        [0, '#FFF'],
+                                        [1, '#333']
+                                    ]
+                                },
+                                borderWidth: 0,
+                                outerRadius: '109%'
+                            }, {
+                                backgroundColor: {
+                                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                                    stops: [
+                                        [0, '#333'],
+                                        [1, '#FFF']
+                                    ]
+                                },
+                                borderWidth: 1,
+                                outerRadius: '107%'
+                            }, {
+                                // default background
+                            }, {
+                                backgroundColor: '#DDD',
+                                borderWidth: 0,
+                                outerRadius: '105%',
+                                innerRadius: '103%'
+                            }]
+                        },
+
+                        // the value axis
+                        yAxis: {
+                            min: 0.000,
+                            max: 1.000,
+
+                            minorTickInterval: 'auto',
+                            minorTickWidth: 1,
+                            minorTickLength: 10,
+                            minorTickPosition: 'inside',
+                            minorTickColor: '#666',
+
+                            tickPixelInterval: 30,
+                            tickWidth: 2,
+                            tickPosition: 'inside',
+                            tickLength: 10,
+                            tickColor: '#666',
+                            labels: {
+                                step: 2,
+                                rotation: 'auto'
+                            },
+                            title: {
+                                text: 'mg/m³'
+                            },
+                            plotBands: [{
+                                from: 0.000,
+                                to: 0.060,
+                                color: '#55BF3B' // green
+                            }, {
+                                from: 0.060,
+                                to: 0.080,
+                                color: '#DDDF0D' // yellow
+                            }, {
+                                from: 0.080,
+                                to: 1.000,
+                                color: '#DF5353' // red
+                            }]
+                        },
+
+                        series: [{
+                            name: '甲醛',
+                            data: [0.010],
+                            tooltip: {
+                                valueSuffix: 'mg/m³'
+                            }
+                        }]
+
+                    },
+                    // Add some life
+                    function (chart) {
+                        if (!chart.renderer.forExport) {
+                            setInterval(function () {
+                                var y = 0.000
+                                $.get("{{ url_for('pms5003s', name='formaldehyde') }}",function(data) {
+                                    var point = chart.series[0].points[0];
+                                    if (data != '-1') {
+                                        //console.log(data)
+                                        y = parseFloat(data);
+                                        console.log("formaldehyde",y);
+                                        point.update(y);
+                                        //console.log(series);
+                                    } else {
+                                        //console.log("数据校验失败，等待下次请求");
+                                    }
+                                })
+                            }, 10000);
+                        }
+                    });
+                });
+                </script>
+            </section><!-- end PM1.0 PM2.5 PM10 甲醛-->
+
+            <!--颗粒物 个数-->
+            <section class="mdl-grid section--center mdl-grid--no-spacing mdl-shadow--2dp">
+                <div id="particulate" class="mdl-cell--12-col mdl-cell--12-col-phone"></div>
+                <script>
+                    $(function () {
+                        Highcharts.chart('particulate', {
+                            chart: {
+                                type: 'bar',
+                            },
+                            title: {
+                                text: '颗粒物数量'
+                            },
+                            subtitle: {
+                                text: null
+                            },
+                            xAxis: {
+                                categories: ['0.3', '0.5', '1.0', '2.5', '5.0','10.0'],
+                                title: {
+                                    text: '直径(微米 μm)'
+                                }
+                            },
+                            yAxis: {
+                                min: 0,
+                                title: {
+                                    text: '颗粒数量 (个/立方米)',
+                                    align: 'high'
+                                },
+                                labels: {
+                                    overflow: 'justify'
+                                }
+                            },
+                            tooltip: {
+                                valueSuffix: ' 个'
+                            },
+                            plotOptions: {
+                                bar: {
+                                    dataLabels: {
+                                        enabled: true
+                                    }
+                                }
+                            },
+                            legend: {
+                                layout: 'vertical',
+                                align: 'right',
+                                verticalAlign: 'top',
+                                x: -40,
+                                y: 80,
+                                floating: true,
+                                borderWidth: 1,
+                                backgroundColor: ((Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'),
+                                shadow: true
+                            },
+                            credits: {
+                                enabled: false
+                            },
+                            series: [{
+                                data: [30, 50, 100, 250, 500, 1000]
+                            }]
+                        },
+                        function (chart) {
+                        if (!chart.renderer.forExport) {
+                            setInterval(function () {
+                                $.get("{{ url_for('pms5003s', name='particulate') }}",function(data) {
+                                    var point0 = chart.series[0].points[0];     // 对应图标竖轴从上到下 0.3,0.5,...10
+                                    var point1 = chart.series[0].points[1];
+                                    var point2 = chart.series[0].points[2];
+                                    var point3 = chart.series[0].points[3];
+                                    var point4 = chart.series[0].points[4];
+                                    var point5 = chart.series[0].points[5];
+                                    if (data != '-1') {
+                                        //console.log("particulate", data)       // [54, 6936, 2025, 280, 21, 2]
+                                        data = (data.replace("[","")).replace("]","")   // 54, 6936, 2025, 280, 21, 2
+                                        var particulate0dot3 = parseInt(data.split(",")[0]);
+                                        var particulate0dot5 = parseInt(data.split(",")[1]);
+                                        var particulate1dot0 = parseInt(data.split(",")[2]);
+                                        var particulate2dot5 = parseInt(data.split(",")[3]);
+                                        var particulate5dot0 = parseInt(data.split(",")[4]);
+                                        var particulate10dot0 = parseInt(data.split(",")[5]);
+                                        //console.log("particulate0dot3",particulate0dot3,typeof particulate0dot3);
+
+                                        point0.update(particulate0dot3);
+                                        point1.update(particulate0dot5);
+                                        point2.update(particulate1dot0);
+                                        point3.update(particulate2dot5);
+                                        point4.update(particulate5dot0);
+                                        point5.update(particulate10dot0);
+                                        //console.log(series);
+                                    } else {
+                                        //console.log("数据校验失败，等待下次请求");
+                                    }
+                                })
+                            }, 2310);
+                        }
+                    });
+
+                    });
+                </script>
+            </section><!-- 颗粒物 个数-->
+
+
+            <section class="section--footer mdl-color--white mdl-grid">
+                <!--
+                <div class="section__circle-container mdl-cell mdl-cell--2-col mdl-cell--1-col-phone">
+                    <div class="section__circle-container__circle mdl-color--accent section__circle--big"></div>
+                </div>
+                <div class="section__text mdl-cell mdl-cell--4-col-desktop mdl-cell--6-col-tablet mdl-cell--3-col-phone">
+                    <h5></h5>
+                </div>
+                <div class="section__circle-container mdl-cell mdl-cell--2-col mdl-cell--1-col-phone">
+                    <div class="section__circle-container__circle mdl-color--accent section__circle--big"></div>
+                </div>
+
+                <div class="section__text mdl-cell mdl-cell--4-col-desktop mdl-cell--6-col-tablet mdl-cell--3-col-phone">
+                    <h5>Lorem ipsum dolor sit amet</h5>
+                    Qui sint ut et qui nisi cupidatat. Reprehenderit nostrud proident officia exercitation anim et
+                    pariatur ex.
+                </div>-->
+            </section>
+        </div>
+        <!-- tab页  入口已取消-->
+        <div class="mdl-layout__tab-panel" id="features">
+            <section class="section--center mdl-grid mdl-grid--no-spacing">
+                <div class="mdl-cell mdl-cell--12-col">
+                    <h4>Features</h4>
+                    Minim duis incididunt est cillum est ex occaecat consectetur. Qui sint ut et qui nisi cupidatat.
+                    Reprehenderit nostrud proident officia exercitation anim et pariatur ex.
+                    <ul class="toc">
+                        <h4>Contents</h4>
+                        <a href="#lorem1">Lorem ipsum</a>
+                        <a href="#lorem2">Lorem ipsum</a>
+                        <a href="#lorem3">Lorem ipsum</a>
+                        <a href="#lorem4">Lorem ipsum</a>
+                        <a href="#lorem5">Lorem ipsum</a>
+                    </ul>
+
+                    <h5 id="lorem1">Lorem ipsum dolor sit amet</h5>
+                    Excepteur et pariatur officia veniam anim culpa cupidatat consequat ad velit culpa est non.
+                    <ul>
+                        <li>Nisi qui nisi duis commodo duis reprehenderit consequat velit aliquip.</li>
+                        <li>Dolor consectetur incididunt in ipsum laborum non et irure pariatur excepteur anim occaecat
+                            officia sint.
+                        </li>
+                        <li>Lorem labore proident officia excepteur do.</li>
+                    </ul>
+
+                    <p>
+                        Sit qui est voluptate proident minim cillum in aliquip cupidatat labore pariatur id tempor id.
+                        Proident occaecat occaecat sint mollit tempor duis dolor cillum anim. Dolore sunt ea mollit
+                        fugiat in aliqua consequat nostrud aliqua ut irure in dolore. Proident aliqua culpa sint sint
+                        exercitation. Non proident occaecat reprehenderit veniam et proident dolor id culpa ea tempor do
+                        dolor. Nulla adipisicing qui fugiat id dolor. Nostrud magna voluptate irure veniam veniam labore
+                        ipsum deserunt adipisicing laboris amet eu irure. Sunt dolore nisi velit sit id. Nostrud
+                        voluptate labore proident cupidatat enim amet Lorem officia magna excepteur occaecat eu qui.
+                        Exercitation culpa deserunt non et tempor et non.
+                    </p>
+                    <p>
+                        Do dolor eiusmod eu mollit dolore nostrud deserunt cillum irure esse sint irure fugiat
+                        exercitation. Magna sit voluptate id in tempor elit veniam enim cupidatat ea labore elit. Aliqua
+                        pariatur eu nulla labore magna dolore mollit occaecat sint commodo culpa. Eu non minim duis
+                        pariatur Lorem quis exercitation. Sunt qui ex incididunt sit anim incididunt sit elit ad officia
+                        id.
+                    </p>
+                    <p id="lorem2">
+                        Tempor voluptate ex consequat fugiat aliqua. Do sit et reprehenderit culpa deserunt culpa.
+                        Excepteur quis minim mollit irure nulla excepteur enim quis in laborum. Aliqua elit voluptate ad
+                        deserunt nulla reprehenderit adipisicing sint. Est in eiusmod exercitation esse commodo. Ea
+                        reprehenderit exercitation veniam adipisicing minim nostrud. Veniam dolore ex ea occaecat non
+                        enim minim id ut aliqua adipisicing ad. Occaecat excepteur aliqua tempor cupidatat aute dolore
+                        deserunt ipsum qui incididunt aliqua occaecat sit quis. Culpa sint aliqua aliqua reprehenderit
+                        veniam irure fugiat ea ad.
+                    </p>
+                    <p>
+                        Eu minim fugiat laborum irure veniam Lorem aliqua enim. Aliqua veniam incididunt consequat irure
+                        consequat tempor do nisi deserunt. Elit dolore ad quis consectetur sint laborum anim magna do
+                        nostrud amet. Ea nulla sit consequat quis qui irure dolor. Sint deserunt excepteur consectetur
+                        magna irure. Dolor tempor exercitation dolore pariatur incididunt ut laboris fugiat ipsum sunt
+                        veniam aute sunt labore. Non dolore sit nostrud eu ad excepteur cillum eu ex Lorem duis.
+                    </p>
+                    <p>
+                        Id occaecat velit non ipsum occaecat aliqua quis ut. Eiusmod est magna non esse est ex
+                        incididunt aute ullamco. Cillum excepteur sint ipsum qui quis velit incididunt amet. Qui
+                        deserunt anim enim laborum cillum reprehenderit duis mollit amet ad officia enim. Minim sint et
+                        quis aliqua aliqua do minim officia dolor deserunt ipsum laboris. Nulla nisi voluptate
+                        consectetur est voluptate et amet. Occaecat ut quis adipisicing ad enim. Magna est magna sit
+                        duis proident veniam reprehenderit fugiat reprehenderit enim velit ex. Ullamco laboris culpa
+                        irure aliquip ad Lorem consequat veniam ad ipsum eu. Ipsum culpa dolore sunt officia laborum
+                        quis.
+                    </p>
+
+                    <h5 id="lorem3">Lorem ipsum dolor sit amet</h5>
+
+                    <p id="lorem4">
+                        Eiusmod nulla aliquip ipsum reprehenderit nostrud non excepteur mollit amet esse est est dolor.
+                        Dolore quis pariatur sit consectetur veniam esse ullamco duis Lorem qui enim ut veniam. Officia
+                        deserunt minim duis laborum dolor in velit pariatur commodo ullamco eu. Aute adipisicing ad duis
+                        labore laboris do mollit dolor cillum sunt aliqua ullamco. Esse tempor quis cillum consequat
+                        reprehenderit. Adipisicing proident anim eu sint elit aliqua anim dolore cupidatat fugiat
+                        aliquip qui.
+                    </p>
+                    <p id="lorem5">
+                        Nisi eiusmod esse cupidatat excepteur exercitation ipsum reprehenderit nostrud deserunt aliqua
+                        ullamco. Anim est irure commodo eiusmod pariatur officia. Est dolor ipsum excepteur magna aliqua
+                        ad veniam irure qui occaecat eiusmod aute fugiat commodo. Quis mollit incididunt amet sit minim
+                        velit eu fugiat voluptate excepteur. Sit minim id pariatur ex cupidatat cupidatat nostrud
+                        nostrud ipsum.
+                    </p>
+                    <p>
+                        Enim ea officia excepteur ad veniam id reprehenderit eiusmod esse mollit consequat. Esse non
+                        aute ullamco Lorem aliqua qui dolore irure eiusmod aute aliqua proident labore aliqua. Ipsum
+                        voluptate voluptate exercitation laborum deserunt nulla elit aliquip et minim ex veniam. Duis
+                        cupidatat aute sunt officia mollit dolor ad elit ad aute labore nostrud duis pariatur. In est
+                        sint voluptate consectetur velit ea non labore. Ut duis ea aliqua consequat nulla laboris fugiat
+                        aute id culpa proident. Minim eiusmod laboris enim Lorem nisi excepteur mollit voluptate enim
+                        labore reprehenderit officia mollit.
+                    </p>
+                    <p>
+                        Cupidatat labore nisi ut sunt voluptate quis sunt qui ad Lorem esse nisi. Ex esse velit ullamco
+                        incididunt occaecat dolore veniam tempor minim adipisicing amet. Consequat in exercitation est
+                        elit anim consequat cillum sint labore cillum. Aliquip mollit laboris ad labore anim.
+                    </p>
+                </div>
+            </section>
+        </div>
+        <footer class="mdl-mega-footer">
+            <div class="mdl-mega-footer--middle-section">
+                <div class="mdl-mega-footer--drop-down-section">
+                    <input class="mdl-mega-footer--heading-checkbox" type="checkbox" checked>
+                    <img src="{{ url_for('static',filename='images/dribs.jpg') }}" style="margin-top: 14px;">
+
+                </div>
+                <div class="mdl-mega-footer--drop-down-section">
+                    <input class="mdl-mega-footer--heading-checkbox" type="checkbox" checked>
+
+                </div>
+                <div class="mdl-mega-footer--drop-down-section">
+                    <input class="mdl-mega-footer--heading-checkbox" type="checkbox" checked>
+                    <h1 class="mdl-mega-footer--heading">硬件清单</h1>
+                    <ul class="mdl-mega-footer--link-list">
+                        <li>树莓派3B</li>
+                        <li>攀藤PMS5003s</li>
+                        <li>奥松DHT22</li>
+                        <li>1.25排针转2.5TTL转接板</li>
+                        <li>TTL转串口转接板</li>
+                    </ul>
+                </div>
+                <div class="mdl-mega-footer--drop-down-section">
+                    <input class="mdl-mega-footer--heading-checkbox" type="checkbox" checked>
+                    <h1 class="mdl-mega-footer--heading">涉及技术</h1>
+                    <ul class="mdl-mega-footer--link-list">
+                        <li>前端 material-design-lite</li>
+                        <li>图表 high-chart</li>
+                        <li>后台&驱动 python flask</li>
+                        <li>数据未持久化 所见数据为即时采集</li>
+                        <li>注意：不支持多用户访问，访问后请关闭网页</li>
+                    </ul>
+                </div>
+                <div class="mdl-mega-footer--drop-down-section">
+                    <input class="mdl-mega-footer--heading-checkbox" type="checkbox" checked>
+                    <h1 class="mdl-mega-footer--heading">开发者</h1>
+                    <ul class="mdl-mega-footer--link-list">
+                        <li>QQ：969501808</li>
+                        <li>1owo.com</li>
+                    </ul>
+                </div>
+            </div>
+        </footer>
+    </main>
+</div>
+<!--
+<a href="https://1owo.com" target="_blank" id="view-source" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">View
+    Source</a>-->
+
+</body>
+</html>
