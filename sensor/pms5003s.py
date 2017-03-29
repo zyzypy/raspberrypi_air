@@ -24,7 +24,7 @@ def get_results(ser):
 
     # 读取数据
     try:
-        recv_bytes = ser.read(count)
+        recv_bytes = ser.read(count)    # 缓冲区的数据全部取出，可能包含多次数据
     except serial.SerialException:
         return '-1'
     recv_bytes_arr = bytearray(recv_bytes)      # 字节转字节数组才能操作
@@ -37,8 +37,8 @@ def get_results(ser):
     recv_decimal = []
 
     for i, byte in enumerate(recv_bytes_arr):
-        """ 遍历字节组 转成16进制放入recv_hex
-            根据起始字节截取一条32字节结果数据
+        """ 遍历从缓冲区取到的全部数据 根据起始字节flag取一次结果数据，丢弃其余字节数据。缩短time.sleep可以获得更频繁的数据
+            转成16进制放入recv_hex
             2字节起始符+2字节帧长度+13组*2字节数据+2字节校验=32
         """
         if byte_flag_1 is False:
