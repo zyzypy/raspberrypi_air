@@ -58,11 +58,12 @@ def get_results(ser):
                 continue
             else:
                 byte_flag_1 = False     # 如果不等于BYTE_FLAG_2，说明前一次的BYTE_FLAG_1是数据位恰好相等 并不是起始符1
+                del recv_decimal[-1]    # 之前的BYTE_FLAG_1是某个数据位而并不是起始位1，所以作为脏数据写进了数组，应该剔除
                 continue
 
         if byte_flag_2 is True:         # 起始2字节 帧长度2字节值应该为28 固定所以写死，有校验不怕出问题。所以除了起始2字节，向后取30字节
             recv_decimal.append(int(byte))
-            if i == 31:
+            if len(recv_decimal) == 32:
                 break
 
     # print('recv_decimal', recv_decimal, len(recv_decimal))
