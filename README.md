@@ -1,14 +1,39 @@
-运行：
-树莓派上usb口连一个pms5003s，GPIO连dht22，代码是一个flaskweb服务，跑在树莓派的0.0.0.0:80，同一局域网下浏览器访问树莓派的ip。
+Raspberry Pi Air Quality
+===
+## Brief
+Status: Obsoleted 废弃  
+Year: 2015  
 
-主要缺点：
-前端同步请求传感器，而不是请求一个中间缓存变量，只能单人访问，过于频繁的请求会导致传感器错误。
-不太会js，hightcharts 照着模板把数据硬塞了进去 同步请求，应该用jquery异步请求。
-粉尘传感器没有用GPIO上的串口，另接了转换板，这跟直接插windowsPC上没什么区别。
+After having self-studied Python and Flask in 2015, I came into contact with Raspberry Pi, it's very interesting,
+playing with hardware and sensors.  
 
-建议食用方法：
-dht11那个，别人写的，github上看了几个就这个好。网上搜型号的说明书结合代码看
-插哪个针脚改相应代码，估计你项目运行不起来。我写这个的时候水平比较次，存在如上缺点，看看就行了，别影响你思路。
+![中文详细介绍和简略教程](https://blog-hexo.zyzypy.com/%E7%A1%AC%E4%BB%B6/%E7%A1%AC%E4%BB%B6/%E7%A1%AC%E4%BB%B6-%E6%A0%91%E8%8E%93%E6%B4%BEweather%E9%A1%B9%E7%9B%AE%E8%AF%B4%E6%98%8E/)
+![应公司要求在抖音上了一节招生宣传课](https://buckets.zyzypy.com/raspberrypi_air/)  
+
+
+## Tech stack
+- Hardware:  
+  - Raspberry Pi 3B  
+  - PlanTower PMS5003s(G5s) PM2.5 laser dust sensor  
+  - Aoson DHT22(AM2302) temperature and humidity sensor  
+- Frontend: Material UI  High-chat
+- Backend: Flask
+
+limited by my ability at that time,  
+Deficiency:  
+- Frequency requests from frontend to backend results error, because request will call sensor directly, 
+backend not use a database or global variable to cache sensor data.  
+- Data of High-charts rendered from Flask template syntax, which should be asynchronous via js ajax, 
+due to the poor frontend ability at that time, hence need to request frequently to update chart.  
+
+And the tech stack is outdated now, so this project is obsoleted. Maybe refactor in the future.
+
+
+## Screen shot
+![](./README_IMG/1.jpg)  
+![](./README_IMG/2.png)  
+Enrolling publicity course on DouYin(TikTok) ask by ex-company in 2021.  
+![](./README_IMG/3yangzheng.jpg)  
 
 
 
