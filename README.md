@@ -7,8 +7,8 @@ Year: 2015
 After having self-studied Python and Flask in 2015, I came into contact with Raspberry Pi, it's very interesting,
 playing with hardware and sensors.  
 
-![中文详细介绍和简略教程](https://blog-hexo.zyzypy.com/%E7%A1%AC%E4%BB%B6/%E7%A1%AC%E4%BB%B6/%E7%A1%AC%E4%BB%B6-%E6%A0%91%E8%8E%93%E6%B4%BEweather%E9%A1%B9%E7%9B%AE%E8%AF%B4%E6%98%8E/)
-![应公司要求在抖音上了一节招生宣传课](https://buckets.zyzypy.com/raspberrypi_air/)  
+[中文详细介绍和简略教程](https://blog-hexo.zyzypy.com/%E7%A1%AC%E4%BB%B6/%E7%A1%AC%E4%BB%B6/%E7%A1%AC%E4%BB%B6-%E6%A0%91%E8%8E%93%E6%B4%BEweather%E9%A1%B9%E7%9B%AE%E8%AF%B4%E6%98%8E/)
+[应公司要求在抖音上了一节招生宣传课](https://buckets.zyzypy.com/raspberrypi_air/)  
 
 
 ## Tech stack
